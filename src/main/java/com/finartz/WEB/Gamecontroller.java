@@ -22,33 +22,33 @@ public class Gamecontroller implements ApplicationContextAware {
 
     @RequestMapping(value = "/play", method = RequestMethod.POST)
     public GameResponse play(@RequestBody GameRequest request) {
-
         GameLogic gameLogic = applicationContext.getBean(GameLogic.class);
-
-        boolean same = gameLogic.isSame(request.getFirstPlayerMove(), request.getSecondPlayerMove());
-        if (same) {
-            GameResponse gameResponse = new GameResponse();
-            gameResponse.setFirstPlayerWins(false); gameResponse.setSecondPlayerWins(false); gameResponse.setWinner("");
-            gameResponse.setMessage(request.getFirstPlayerName() + " and " + request.getSecondPlayerName() + " made same move.");
-            return gameResponse;
-        }
-
-
-        boolean firstPlayerWin = gameLogic.firstWins(request.getFirstPlayerMove(), request.getSecondPlayerMove());
-
         GameResponse gameResponse = new GameResponse();
-        if (firstPlayerWin) {
-            gameResponse.setFirstPlayerWins(true);
-            gameResponse.setSecondPlayerWins(false);
-        } else {
-            gameResponse.setFirstPlayerWins(false);
-            gameResponse.setSecondPlayerWins(true);
-        }
 
+        boolean isKeyExists = gameLogic.firstWinsContains( request.getFirstPlayerMove(), request.getSecondPlayerMove());
+
+        gameResponse = isKeyExists ? decideWinner(request, gameResponse, gameLogic): sameOrInvalid(request, gameResponse, gameLogic);
+
+        return gameResponse;
+    }
+
+    private GameResponse decideWinner(GameRequest request, GameResponse gameResponse, GameLogic gameLogic){
+        boolean firstPlayerWin = gameLogic.firstWins(request.getFirstPlayerMove(), request.getSecondPlayerMove());
+        gameResponse.setFirstPlayerWins(firstPlayerWin);
+        gameResponse.setSecondPlayerWins(!firstPlayerWin);
         gameResponse.setWinner(firstPlayerWin ? request.getFirstPlayerName() : request.getSecondPlayerName());
 
         prepareWinningMessage(request, firstPlayerWin, gameResponse);
+        return  gameResponse;
+    }
 
+    private GameResponse sameOrInvalid(GameRequest request, GameResponse gameResponse, GameLogic gameLogic){
+        boolean same = gameLogic.isSame(request.getFirstPlayerMove(), request.getSecondPlayerMove());
+        gameResponse.setFirstPlayerWins(false);
+        gameResponse.setSecondPlayerWins(false);
+        gameResponse.setWinner("");
+
+        prepareSameOrInvalidMessage(request, same, gameResponse);
         return gameResponse;
     }
 
@@ -57,9 +57,14 @@ public class Gamecontroller implements ApplicationContextAware {
         gameResponse.setMessage(firstPlayerWin ? request.getFirstPlayerName() + winningMessage: request.getSecondPlayerName() + winningMessage);
     }
 
+    private void prepareSameOrInvalidMessage(GameRequest request, boolean same, GameResponse gameResponse){
+        String sameMessage = request.getFirstPlayerName() + " and " + request.getSecondPlayerName() + " made same move.";
+        String notFoundMessage = request.getFirstPlayerName() + " or " + request.getSecondPlayerName() + " made an invalid move";
+        gameResponse.setMessage(same ? sameMessage:notFoundMessage);
+    }
+
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-
         this.applicationContext = applicationContext;
     }
 }

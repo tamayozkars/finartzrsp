@@ -11,6 +11,7 @@ public class RockscissorspaperApplicationTests {
 
 	@Test
 	public void contextLoads() {
+
 	}
 
 }
